@@ -1,5 +1,32 @@
+#include <cstdlib> 
+#include <sstream>
 #include <iostream>
 #include <string>
+#include <filesystem>
+
+std::string searchExecutable(std::string_view exec) {
+	const char* path = std::getenv("PATH");
+
+	if (path == nullptr) {
+		return "";
+	}
+
+	std::istringstream in{ path };
+	std::string dir{};
+
+	while (std::getline(in, dir, ':')) {
+		std::filesystem::path candidate = std::filesystem::path{ dir } / exec;
+		std::error_code ec;
+		if (std::filesystem::is_regular_file(candidate, ec)) {
+			auto perms = std::filesystem::status(candidate, ec).permissions();
+			if ((perms & std::filesystem::perms::owner_exec) != std::filesystem::perms::none) {
+				return candidate.string();
+			}
+		}
+	}
+
+	return "";
+}
 
 int main() {
 	// Flush after every std::cout / std:cerr
@@ -31,12 +58,22 @@ int main() {
 			std::cout << args << '\n';
 		}
 		else if (command == "type") {
-			if ((args == "echo" || args == "exit" || args == "type") 
-				&& args.find(' ') == std::string_view::npos) {
+			if (args.find(' ') != std::string_view::npos){
+				std::cout << command << ": " << "command not found\n";
+			}
+			else if (args == "echo" || args == "exit" || args == "type") 
+				 {
 				std::cout << args << " is a shell builtin\n";
 			}
 			else {
-				std::cout << args << ": " << "not found\n";
+				std::string path = searchExecutable(args);
+				if (path == "") {
+					std::cout << args << "is" << "not found\n";
+				}
+				else {
+					std::cout << command << "is " << path << '\n';
+				}
+				
 			}
 		}
 		else {
