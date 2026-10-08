@@ -68,7 +68,7 @@ int main() {
 			else {
 				std::string path = searchExecutable(args);
 				if (path == "") {
-					std::cout << args << "is" << "not found\n";
+					std::cout << args << ": " << "not found\n";
 				}
 				else {
 					std::cout << args << " is " << path << '\n';
