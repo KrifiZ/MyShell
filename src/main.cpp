@@ -36,7 +36,7 @@ int main() {
 				std::cout << args << " is a shell builtin\n";
 			}
 			else {
-				std::cout << args << ": " << "command not found\n";
+				std::cout << args << ": " << "not found\n";
 			}
 		}
 		else {
