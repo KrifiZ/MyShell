@@ -10,13 +10,13 @@ int main() {
 		std::cout << "$ ";
 
 		std::string buf{};
-		std::cin >> buf;
+		std::getline(std::cin, buf);
 
 		if (buf == "exit") {
 			return 0;
 		}
 		else if (buf.starts_with("echo")) {
-			std::cout << buf.substr(4) << '\n';
+			std::cout << buf.substr(5) << '\n';
 		}
 		else {
 			std::cout << buf << ": " << "command not found\n";
