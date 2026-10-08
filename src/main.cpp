@@ -33,7 +33,7 @@ int main() {
 		else if (command == "type") {
 			if ((args == "echo" || args == "exit" || args == "type") 
 				&& args.find(' ') == std::string_view::npos) {
-				std::cout << args << ": " << "is a shell builtin\n";
+				std::cout << args << " is a shell builtin\n";
 			}
 			else {
 				std::cout << args << ": " << "command not found\n";
