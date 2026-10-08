@@ -71,7 +71,7 @@ int main() {
 					std::cout << args << "is" << "not found\n";
 				}
 				else {
-					std::cout << command << "is " << path << '\n';
+					std::cout << args << " is " << path << '\n';
 				}
 				
 			}
