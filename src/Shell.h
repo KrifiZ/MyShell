@@ -29,7 +29,7 @@ private:
 	void builtinEcho(const Command& cmd);
 	void builtinExit(const Command& cmd);
 	void builtinType(const Command& cmd);
-
+	void builtinPwd(const Command& cmd);
 	std::unordered_map<std::string, Handler> builtins_;
 	bool running_ = true;
 };
