@@ -4,10 +4,12 @@
 #include <unordered_map>
 #include <string_view>
 #include <string>
+#include <optional>
 
 struct Command {
 	std::string name;
 	std::vector<std::string> argv;
+	std::optional<std::string> stdoutFile;
 	explicit Command(std::string_view line);
 };
 

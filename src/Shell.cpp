@@ -1,6 +1,7 @@
 #include "Shell.h"
 #include <cstdlib> 
 #include <sstream>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <filesystem>
@@ -24,8 +25,17 @@ Command::Command(std::string_view line) {
 	if (tokens.empty()) return;
 
 	name = std::move(tokens.front());
-	argv.assign(std::make_move_iterator(tokens.begin() + 1),
-		std::make_move_iterator(tokens.end()));
+
+	for (std::size_t i = 1; i < tokens.size(); ++i) {
+		if (tokens[i] == ">" || tokens[i] == "1>") {
+			if (i + 1 < tokens.size()) {
+				stdoutFile = tokens[i + 1];
+				++i;
+			}
+			continue;
+		}
+		argv.push_back(tokens[i]);
+	}
 };
 
 Shell::Shell() {
@@ -54,11 +64,23 @@ void Shell::run() {
 }
 
 void Shell::execute(const Command& cmd) {
+	std::ofstream file;
+	std::streambuf* old = nullptr;
+
+	if (cmd.stdoutFile) {
+		file.open(*cmd.stdoutFile);
+		old = std::cout.rdbuf(file.rdbuf());
+	}
+
 	if (auto it = builtins_.find(cmd.name); it != builtins_.end()) {
 		it->second(cmd);
 	}
 	else {
 		runExternal(cmd);
+	}
+
+	if (cmd.stdoutFile) {
+		std::cout.rdbuf(old);
 	}
 }
 
