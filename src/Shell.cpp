@@ -124,5 +124,5 @@ void Shell::builtinType(const Command& cmd) {
 }
 
 void Shell::builtinPwd(const Command& cmd) {
-	std::cout << std::filesystem::current_path() << '\n';
+	std::cout << std::filesystem::current_path().string() << '\n';
 }
