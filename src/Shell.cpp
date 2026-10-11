@@ -132,7 +132,7 @@ void Shell::builtinCd(const Command& cmd) {
 	namespace fs = std::filesystem;
 
 	std::string target;
-	if (cmd.argv.size() < 2 || cmd.argv[1] == "~") {
+	if (cmd.argv.size() < 1 || cmd.argv[0] == "~") {
 		const char* home = std::getenv("HOME");
 		if (!home) {
 			return;
