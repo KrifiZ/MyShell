@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <vector>
+#include <cstring>
 
 std::string findExeByPath(const char* path, std::string_view exec) {
 	std::istringstream in{ path };
@@ -45,6 +46,18 @@ std::vector<std::string> splitArgs(std::string_view sv) {
 	return out;
 }
 
+struct Command {
+	std::string name;
+	std::vector<std::string> argv;
+	explicit Command(std::string_view line) {
+		std::vector<std::string> tokens = splitArgs(line);
+		if (tokens.empty()) return;
+
+		name = std::move(tokens.front());
+		argv.assign(std::make_move_iterator(tokens.begin() + 1),
+			std::make_move_iterator(tokens.end()));
+	}
+};
 
 int main() {
 	// Flush after every std::cout / std:cerr
@@ -57,48 +70,43 @@ int main() {
 		std::string buf{};
 		std::getline(std::cin, buf);
 
-		const std::string_view line{ buf };
-		const auto space = line.find(' ');
-		const std::string_view command = line.substr(0, space);
+		Command command{ buf };
 
-		std::string_view args{};
-		if (space == std::string_view::npos) {
-			args = std::string_view{};
-		}
-		else {
-			args = line.substr(space + 1);
+		if (command.name.empty()) {
+			continue;  
 		}
 
-		if (command == "exit") {
+		if (command.name == "exit") {
 			return 0;
 		}
-		else if (command == "echo") {
-			std::cout << args << '\n';
+		else if (command.name == "echo") {
+			for (std::size_t i = 0; i < command.argv.size(); ++i) {
+				if (i > 0) std::cout << ' ';
+				std::cout << command.argv[i];
+			}
+			std::cout << '\n';
 		}
-		else if (command == "type") {
-			if (args.find(' ') != std::string_view::npos) {
-				std::cout << command << ": " << "command not found\n";
-			}
-			else if (args == "echo" || args == "exit" || args == "type")
-			{
-				std::cout << args << " is a shell builtin\n";
-			}
-			else {
-				std::string path = searchExecutable(args);
-				if (path == "") {
-					std::cout << args << ": " << "not found\n";
-				}
-				else {
-					std::cout << args << " is " << path << '\n';
+		else if (command.name == "type") {
+			for (const auto& arg : command.argv) {
+				if (arg == "echo" || arg == "exit" || arg == "type") {
+					std::cout << arg << " is a shell builtin\n";
+					continue;
 				}
 
+				std::string path = searchExecutable(arg);
+				if (path.empty()) {
+					std::cout << arg << ": not found\n";
+				}
+				else {
+					std::cout << arg << " is " << path << '\n';
+				}
 			}
 		}
 		else {
 
-			std::string exec = searchExecutable(command);
+			std::string exec = searchExecutable(command.name);
 			if (exec.empty()) {
-				std::cout << command << ": command not found\n";
+				std::cout << command.name << ": command not found\n";
 				continue;
 			}
 			pid_t pid = fork();
@@ -107,10 +115,11 @@ int main() {
 				return 1;
 			}
 			if (pid == 0) {
-				std::vector<std::string> tokens = splitArgs(line);
 				std::vector<char*> argv{};
-				for (auto& t : tokens) argv.push_back(t.data());
+				argv.push_back(command.name.data());
+				for (auto& a : command.argv) argv.push_back(a.data());
 				argv.push_back(nullptr);
+
 				execv(exec.c_str(), argv.data());
 				perror("execv failed");
 				_exit(1);
