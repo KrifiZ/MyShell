@@ -33,6 +33,7 @@ Shell::Shell() {
 	builtins_["exit"] = [this](const Command& c) {builtinExit(c);};
 	builtins_["type"] = [this](const Command& c) {builtinType(c);};
 	builtins_["pwd"] = [this](const Command& c) {builtinPwd(c);};
+	builtins_["cd"] = [this](const Command& c) {builtinCd(c);};
 }
 
 void Shell::run() {
@@ -124,5 +125,10 @@ void Shell::builtinType(const Command& cmd) {
 }
 
 void Shell::builtinPwd(const Command& cmd) {
+	std::cout << std::filesystem::current_path().string() << '\n';
+}
+
+void Shell::builtinCd(const Command& cmd) {
+	std::filesystem::path(cmd.argv[1]);
 	std::cout << std::filesystem::current_path().string() << '\n';
 }
