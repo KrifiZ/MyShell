@@ -135,6 +135,7 @@ void Shell::builtinCd(const Command& cmd) {
 	if (cmd.argv.size() < 1 || cmd.argv[0] == "~") {
 		const char* home = std::getenv("HOME");
 		if (!home) {
+			std::cout << "skibidi";
 			return;
 		}
 		target = home;
