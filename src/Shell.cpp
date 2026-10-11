@@ -6,6 +6,7 @@
 #include <string>
 #include <filesystem>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <vector>
@@ -100,6 +101,15 @@ void Shell::runExternal(const Command& cmd) {
 		argv.push_back(const_cast<char*>(cmd.name.data()));
 		for (auto& a : cmd.argv) argv.push_back(const_cast<char*>(a.data()));
 		argv.push_back(nullptr);
+
+		// std::cout.rdbuf swap doesn't reach the exec'd process, redirect fd 1 itself
+		if (cmd.stdoutFile) {
+			int fd = open(cmd.stdoutFile->c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			if (fd >= 0) {
+				dup2(fd, STDOUT_FILENO);
+				close(fd);
+			}
+		}
 
 		execv(exec.c_str(), argv.data());
 		perror("execv failed");
