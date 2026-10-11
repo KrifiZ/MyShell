@@ -98,7 +98,7 @@ void Shell::execute(const Command& cmd) {
 		std::cout.rdbuf(old);
 	}
 	if (cmd.stderrFile) {
-		std::cout.rdbuf(old);
+		std::cerr.rdbuf(old2);
 	}
 }
 
