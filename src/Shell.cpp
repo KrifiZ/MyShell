@@ -129,11 +129,23 @@ void Shell::builtinPwd(const Command& cmd) {
 }
 
 void Shell::builtinCd(const Command& cmd) {
-	try{
-		std::filesystem::path(cmd.argv[1]);
+	namespace fs = std::filesystem;
+
+	std::string target;
+	if (cmd.argv.size() < 2 || cmd.argv[1] == "~") {
+		const char* home = std::getenv("HOME");
+		if (!home) {
+			return;
+		}
+		target = home;
 	}
-	catch (const std::filesystem::filesystem_error& e)
-	{
-		std::cout << cmd.argv[1] << ": No such file or directory\n";
+	else {
+		target = cmd.argv[1];
+	}
+
+	std::error_code ec;
+	fs::current_path(target, ec);
+	if (ec) {
+		std::cout << "cd: " << target << ": No such file or directory\n";
 	}
 }
