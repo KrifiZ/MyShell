@@ -10,6 +10,7 @@ struct Command {
 	std::string name;
 	std::vector<std::string> argv;
 	std::optional<std::string> stdoutFile;
+	std::optional<std::string> stderrFile;
 	explicit Command(std::string_view line);
 };
 

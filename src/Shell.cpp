@@ -35,6 +35,13 @@ Command::Command(std::string_view line) {
 			}
 			continue;
 		}
+		if (tokens[i] == "2>") {
+			if (i + 1 < tokens.size()) {
+				stderrFile = tokens[i + 1];
+				++i;
+			}
+			continue;
+		}
 		argv.push_back(tokens[i]);
 	}
 };
@@ -67,10 +74,17 @@ void Shell::run() {
 void Shell::execute(const Command& cmd) {
 	std::ofstream file;
 	std::streambuf* old = nullptr;
+	std::ofstream file2;
+	std::streambuf* old2 = nullptr;
 
 	if (cmd.stdoutFile) {
 		file.open(*cmd.stdoutFile);
 		old = std::cout.rdbuf(file.rdbuf());
+	}
+
+	if (cmd.stderrFile) {
+		file2.open(*cmd.stderrFile);
+		old2 = std::cerr.rdbuf(file2.rdbuf());
 	}
 
 	if (auto it = builtins_.find(cmd.name); it != builtins_.end()) {
@@ -81,6 +95,9 @@ void Shell::execute(const Command& cmd) {
 	}
 
 	if (cmd.stdoutFile) {
+		std::cout.rdbuf(old);
+	}
+	if (cmd.stderrFile) {
 		std::cout.rdbuf(old);
 	}
 }
@@ -107,6 +124,15 @@ void Shell::runExternal(const Command& cmd) {
 			int fd = open(cmd.stdoutFile->c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
 			if (fd >= 0) {
 				dup2(fd, STDOUT_FILENO);
+				close(fd);
+			}
+		}
+
+
+		if (cmd.stderrFile) {
+			int fd = open(cmd.stderrFile->c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			if (fd >= 0) {
+				dup2(fd, STDERR_FILENO);
 				close(fd);
 			}
 		}
