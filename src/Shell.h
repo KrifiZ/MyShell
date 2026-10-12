@@ -11,7 +11,8 @@ struct Command {
 	std::vector<std::string> argv;
 	std::optional<std::string> stdoutFile;
 	std::optional<std::string> stderrFile;
-	bool shouldAppend;
+	bool appendStdout = false;
+	bool appendStderr = false;
 	explicit Command(std::string_view line);
 };
 

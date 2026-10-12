@@ -29,7 +29,7 @@ Command::Command(std::string_view line) {
 
 	for (std::size_t i = 1; i < tokens.size(); ++i) {
 		if (tokens[i] == ">" || tokens[i] == "1>" || tokens[i] == ">>" || tokens[i] == "1>>") {
-			if (tokens[i] == "1>>" || tokens[i] == ">>") shouldAppend = true;
+			appendStdout = tokens[i] == ">>" || tokens[i] == "1>>";
 			if (i + 1 < tokens.size()) {
 				stdoutFile = tokens[i + 1];
 				++i;
@@ -37,7 +37,7 @@ Command::Command(std::string_view line) {
 			continue;
 		}
 		if (tokens[i] == "2>" || tokens[i] == "2>>") {
-			if (tokens[i] == "2>>") shouldAppend = true;
+			appendStderr = tokens[i] == "2>>";
 			if (i + 1 < tokens.size()) {
 				stderrFile = tokens[i + 1];
 				++i;
@@ -80,7 +80,7 @@ void Shell::execute(const Command& cmd) {
 	std::streambuf* old2 = nullptr;
 
 	if (cmd.stdoutFile) {
-		if (cmd.shouldAppend) {
+		if (cmd.appendStdout) {
 			file.open(*cmd.stdoutFile, std::ofstream::app);
 		}
 		else {
@@ -90,8 +90,8 @@ void Shell::execute(const Command& cmd) {
 	}
 
 	if (cmd.stderrFile) {
-		if (cmd.shouldAppend) {
-			file2.open(*cmd.stdoutFile, std::ofstream::app);
+		if (cmd.appendStderr) {
+			file2.open(*cmd.stderrFile, std::ofstream::app);
 		}
 		else {
 			file2.open(*cmd.stderrFile);
@@ -134,7 +134,7 @@ void Shell::runExternal(const Command& cmd) {
 		// std::cout.rdbuf swap doesn't reach the exec'd process, redirect fd 1 itself
 		if (cmd.stdoutFile) {
 			int fd{};
-			if (cmd.shouldAppend) {
+			if (cmd.appendStdout) {
 				fd = open(cmd.stdoutFile->c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
 			}
 			else {
@@ -149,7 +149,7 @@ void Shell::runExternal(const Command& cmd) {
 
 		if (cmd.stderrFile) {
 			int fd{};
-			if (cmd.shouldAppend) {
+			if (cmd.appendStderr) {
 				fd = open(cmd.stderrFile->c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
 			}
 			else {
