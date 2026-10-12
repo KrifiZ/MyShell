@@ -5,6 +5,7 @@
 #include <string_view>
 #include <string>
 #include <optional>
+#include "Trie.h"
 
 struct Command {
 	std::string name;
@@ -24,6 +25,7 @@ class Shell {
 public:
 	Shell();
 	void run();
+	Trie trie;
 private:
 	using Handler = std::function<void(const Command&)>;
 

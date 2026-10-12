@@ -12,6 +12,27 @@
 #include <vector>
 #include <cstring>
 #include "PathSearch.h"
+#include "Trie.h"
+#include <readline/readline.h>
+
+static const Trie* completionTrie = nullptr;
+
+// readline wo³a to w kó³ko: state == 0 za pierwszym razem, nullptr = koniec
+static char* completionGenerator(const char* text, int state) {
+	static std::vector<std::string> matches;
+	static std::size_t idx;
+	if (state == 0) {
+		matches = completionTrie->withPrefix(text);
+		idx = 0;
+	}
+	if (idx < matches.size()) return strdup(matches[idx++].c_str()); // readline robi free
+	return nullptr;
+}
+
+static char** completion(const char* text, int, int) {
+	rl_attempted_completion_over = 1; // bez podpowiadania nazw plików
+	return rl_completion_matches(text, completionGenerator);
+}
 
 std::vector<std::string> splitArgs(std::string_view sv) {
 	std::vector<std::string> out{};
@@ -54,14 +75,17 @@ Shell::Shell() {
 	builtins_["type"] = [this](const Command& c) {builtinType(c);};
 	builtins_["pwd"] = [this](const Command& c) {builtinPwd(c);};
 	builtins_["cd"] = [this](const Command& c) {builtinCd(c);};
+	for (const auto& [name, _] : builtins_) trie.insert(name);
+	completionTrie = &trie;
+	rl_attempted_completion_function = completion;
 }
 
 void Shell::run() {
 	while(this->running_) {
-		std::cout << "$ ";
-
-		std::string buf{};
-		std::getline(std::cin, buf);
+		char* line = readline("$ ");
+		if (!line) break; // Ctrl+D
+		std::string buf{ line };
+		free(line);
 
 		Command command{ buf };
 
