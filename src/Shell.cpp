@@ -28,14 +28,16 @@ Command::Command(std::string_view line) {
 	name = std::move(tokens.front());
 
 	for (std::size_t i = 1; i < tokens.size(); ++i) {
-		if (tokens[i] == ">" || tokens[i] == "1>") {
+		if (tokens[i] == ">" || tokens[i] == "1>" || tokens[i] == ">>" || tokens[i] == "1>>") {
+			if (tokens[i] == "1>>" || tokens[i] == ">>") shouldAppend = true;
 			if (i + 1 < tokens.size()) {
 				stdoutFile = tokens[i + 1];
 				++i;
 			}
 			continue;
 		}
-		if (tokens[i] == "2>") {
+		if (tokens[i] == "2>" || tokens[i] == "2>>") {
+			if (tokens[i] == "2>>") shouldAppend = true;
 			if (i + 1 < tokens.size()) {
 				stderrFile = tokens[i + 1];
 				++i;
@@ -78,12 +80,22 @@ void Shell::execute(const Command& cmd) {
 	std::streambuf* old2 = nullptr;
 
 	if (cmd.stdoutFile) {
-		file.open(*cmd.stdoutFile);
+		if (cmd.shouldAppend) {
+			file.open(*cmd.stdoutFile, std::ofstream::app);
+		}
+		else {
+			file.open(*cmd.stdoutFile);
+		}
 		old = std::cout.rdbuf(file.rdbuf());
 	}
 
 	if (cmd.stderrFile) {
-		file2.open(*cmd.stderrFile);
+		if (cmd.shouldAppend) {
+			file2.open(*cmd.stdoutFile, std::ofstream::app);
+		}
+		else {
+			file2.open(*cmd.stderrFile);
+		}
 		old2 = std::cerr.rdbuf(file2.rdbuf());
 	}
 
@@ -121,7 +133,13 @@ void Shell::runExternal(const Command& cmd) {
 
 		// std::cout.rdbuf swap doesn't reach the exec'd process, redirect fd 1 itself
 		if (cmd.stdoutFile) {
-			int fd = open(cmd.stdoutFile->c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			int fd{};
+			if (cmd.shouldAppend) {
+				fd = open(cmd.stdoutFile->c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+			}
+			else {
+				fd = open(cmd.stdoutFile->c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			}
 			if (fd >= 0) {
 				dup2(fd, STDOUT_FILENO);
 				close(fd);
@@ -130,7 +148,13 @@ void Shell::runExternal(const Command& cmd) {
 
 
 		if (cmd.stderrFile) {
-			int fd = open(cmd.stderrFile->c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			int fd{};
+			if (cmd.shouldAppend) {
+				fd = open(cmd.stderrFile->c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+			}
+			else {
+				fd = open(cmd.stderrFile->c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			}
 			if (fd >= 0) {
 				dup2(fd, STDERR_FILENO);
 				close(fd);
