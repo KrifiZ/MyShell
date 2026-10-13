@@ -42,3 +42,37 @@ namespace path {
 		return result;
 	}
 }
+
+namespace path {
+	std::vector<std::string> listExecutables() {
+		std::vector<std::string> out{};
+		const char* path = getenv("PATH");
+
+		if (path == nullptr) {
+			return out;
+		}
+
+		std::istringstream in{ path };
+		std::string dir{};
+
+		while (std::getline(in, dir, ':')) {
+			if (!std::filesystem::is_directory(dir)) {
+				continue;
+			}
+			std::error_code ec;
+
+			for (auto const& entry : std::filesystem::directory_iterator(dir, ec)) {
+				if (ec) {
+					continue;
+				}
+				if (std::filesystem::is_regular_file(entry, ec)) {
+					auto perms = std::filesystem::status(entry, ec).permissions();
+					if ((perms & std::filesystem::perms::owner_exec) != std::filesystem::perms::none) {
+						out.push_back(entry.path().filename().string());
+					}
+				}
+			}
+		}
+		return out;
+	}
+}

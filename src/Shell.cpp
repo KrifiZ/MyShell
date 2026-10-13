@@ -76,6 +76,10 @@ Shell::Shell() {
 	builtins_["pwd"] = [this](const Command& c) {builtinPwd(c);};
 	builtins_["cd"] = [this](const Command& c) {builtinCd(c);};
 	for (const auto& [name, _] : builtins_) trie.insert(name);
+	std::vector<std::string> executablesList = path::listExecutables();
+	for (auto executable : executablesList) {
+		trie.insert(executable);
+	}
 	completionTrie = &trie;
 	rl_attempted_completion_function = completion;
 }
